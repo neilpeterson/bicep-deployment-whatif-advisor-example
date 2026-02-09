@@ -2,7 +2,7 @@ using 'main.bicep'
 
 param apimName = 'apim-nepeters-vs'
 param appInsightsLoggerName = 'ins-api-gateway-nepeters'
-param storageAccountName = 'nepetersstor'
+param storageAccountName = 'nepetersstorpre'
 
 // Headers to log in APIM diagnostics
 param headersToLog = [
