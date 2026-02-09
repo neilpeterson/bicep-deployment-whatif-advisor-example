@@ -28,7 +28,7 @@ resource apiManagementInstance 'Microsoft.ApiManagement/service@2022-08-01' = {
   properties: {
     publisherEmail: publisherEmail
     publisherName: publisherName
-    virtualNetworkType: 'External'
+    virtualNetworkType: 'None'
   }
 }
 
