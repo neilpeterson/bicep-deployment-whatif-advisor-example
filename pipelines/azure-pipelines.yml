@@ -1,0 +1,190 @@
+name: Bicep Pipeline - Review & Deploy
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - bicep-deployment/*
+      - pipelines/azure-pipelines.yml
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - bicep-deployment/*
+      - pipelines/azure-pipelines.yml
+
+variables:
+  BICEP_TEMPLATE: ./bicep-deployment/main.bicep
+  PYTHON_VERSION: '3.11'
+
+stages:
+  # PR Review Stage - runs what-if analysis and posts comments to PR
+  - stage: PRReview
+    displayName: 'PR Review'
+    condition: eq(variables['Build.Reason'], 'PullRequest')
+    jobs:
+      - job: WhatIfAnalysis
+        displayName: 'What-If Analysis'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          matrix:
+            PreProduction:
+              ENVIRONMENT_NAME: 'pre-production'
+              BICEP_PARAMS: './bicep-deployment/pre-production.bicepparam'
+              RESOURCE_GROUP: $(AZURE_RESOURCE_GROUP_PRE_PRODUCTION)
+            Production:
+              ENVIRONMENT_NAME: 'production'
+              BICEP_PARAMS: './bicep-deployment/production.bicepparam'
+              RESOURCE_GROUP: $(AZURE_RESOURCE_GROUP_PRODUCTION)
+        steps:
+          - checkout: self
+            fetchDepth: 0
+            displayName: 'Checkout code'
+
+          - task: AzureCLI@2
+            displayName: 'What-If Analysis with Safety Gate ($(ENVIRONMENT_NAME))'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Set up Python
+                python -m pip install --upgrade pip
+                pip install bicep-whatif-advisor[anthropic]
+
+                # Run what-if analysis and pipe to bicep-whatif-advisor
+                az deployment group what-if \
+                  --resource-group "$(RESOURCE_GROUP)" \
+                  --template-file "$(BICEP_TEMPLATE)" \
+                  --parameters "$(BICEP_PARAMS)" \
+                  --exclude-change-types NoChange Ignore \
+                  | bicep-whatif-advisor --no-block --comment-title "$(ENVIRONMENT_NAME) What-If Summary" --bicep-dir bicep-deployment/
+            env:
+              ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  # Validate Stage - runs what-if analysis on push to main
+  - stage: Validate
+    displayName: 'Validate'
+    condition: in(variables['Build.Reason'], 'IndividualCI', 'Manual')
+    jobs:
+      - job: WhatIfValidation
+        displayName: 'What-If Validation'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          matrix:
+            PreProduction:
+              ENVIRONMENT_NAME: 'pre-production'
+              BICEP_PARAMS: './bicep-deployment/pre-production.bicepparam'
+              RESOURCE_GROUP: $(AZURE_RESOURCE_GROUP_PRE_PRODUCTION)
+            Production:
+              ENVIRONMENT_NAME: 'production'
+              BICEP_PARAMS: './bicep-deployment/production.bicepparam'
+              RESOURCE_GROUP: $(AZURE_RESOURCE_GROUP_PRODUCTION)
+        steps:
+          - checkout: self
+            displayName: 'Checkout code'
+
+          - task: AzureCLI@2
+            displayName: 'Run What-If Analysis ($(ENVIRONMENT_NAME))'
+            inputs:
+              azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                # Set up Python
+                python -m pip install --upgrade pip
+                pip install bicep-whatif-advisor[anthropic]
+
+                # Run what-if analysis
+                echo "## What-If Analysis - $(ENVIRONMENT_NAME)" >> $(Agent.TempDirectory)/whatif-output.md
+                az deployment group what-if \
+                  --name "bicep-whatif-$(ENVIRONMENT_NAME)-$(Build.BuildNumber)" \
+                  --resource-group "$(RESOURCE_GROUP)" \
+                  --template-file "$(BICEP_TEMPLATE)" \
+                  --parameters "$(BICEP_PARAMS)" \
+                  --exclude-change-types NoChange Ignore \
+                  | bicep-whatif-advisor --format markdown >> $(Agent.TempDirectory)/whatif-output.md
+
+                # Display output
+                cat $(Agent.TempDirectory)/whatif-output.md
+            env:
+              ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish What-If Results'
+            inputs:
+              PathtoPublish: '$(Agent.TempDirectory)/whatif-output.md'
+              ArtifactName: 'whatif-$(ENVIRONMENT_NAME)'
+              publishLocation: 'Container'
+
+  # Deploy to Pre-Production
+  - stage: DeployPreProduction
+    displayName: 'Deploy Pre-Production'
+    dependsOn: Validate
+    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'Manual'))
+    jobs:
+      - deployment: DeployPreProd
+        displayName: 'Deploy to Pre-Production'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'pre-production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy Bicep Template'
+                  inputs:
+                    azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az deployment group create \
+                        --name "bicep-deploy-pre-production-$(Build.BuildNumber)" \
+                        --resource-group "$(AZURE_RESOURCE_GROUP_PRE_PRODUCTION)" \
+                        --template-file "$(BICEP_TEMPLATE)" \
+                        --parameters ./bicep-deployment/pre-production.bicepparam \
+                        --verbose
+
+  # Deploy to Production
+  - stage: DeployProduction
+    displayName: 'Deploy Production'
+    dependsOn: DeployPreProduction
+    condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'Manual'))
+    jobs:
+      - deployment: DeployProd
+        displayName: 'Deploy to Production'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  displayName: 'Checkout code'
+
+                - task: AzureCLI@2
+                  displayName: 'Deploy Bicep Template'
+                  inputs:
+                    azureSubscription: '$(AZURE_SERVICE_CONNECTION)'
+                    scriptType: 'bash'
+                    scriptLocation: 'inlineScript'
+                    inlineScript: |
+                      az deployment group create \
+                        --name "bicep-deploy-production-$(Build.BuildNumber)" \
+                        --resource-group "$(AZURE_RESOURCE_GROUP_PRODUCTION)" \
+                        --template-file "$(BICEP_TEMPLATE)" \
+                        --parameters ./bicep-deployment/production.bicepparam \
+                        --verbose
