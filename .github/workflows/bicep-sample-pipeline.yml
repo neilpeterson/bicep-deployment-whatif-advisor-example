@@ -73,7 +73,7 @@ jobs:
             --template-file "${{ env.BICEP_TEMPLATE }}" \
             --parameters "${{ matrix.environment.params }}" \
             --exclude-change-types NoChange Ignore \
-            | bicep-whatif-advisor --no-block --bicep-dir bicep-deployment/
+            | bicep-whatif-advisor --no-block --comment-title "Deployment analysis: ${{ matrix.environment.name }}" --bicep-dir bicep-deployment/
 
   validate:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -106,27 +106,6 @@ jobs:
 
       - name: Install bicep-whatif-advisor
         run: pip install bicep-whatif-advisor[anthropic]
-
-      # - name: Run What-If analysis (${{ matrix.environment.name }})
-      #   env:
-      #     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      #   run: |
-      #     az deployment group what-if \
-      #       --name "bicep-whatif-${{ matrix.environment.name }}-${{ github.run_number }}" \
-      #       --resource-group "${{ vars[matrix.environment.resource_group_var] }}" \
-      #       --template-file "${{ env.BICEP_TEMPLATE }}" \
-      #       --parameters "${{ matrix.environment.params }}" \
-      #       --exclude-change-types NoChange Ignore \
-      #       > whatif-output.txt
-
-      # # TODO - can I just add the | bicep-whatif-advicsor to the previous step?
-      # - name: Generate AI summary
-      #   env:
-      #     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      #   run: |
-      #     echo "## 🔍 What-If Analysis - ${{ matrix.environment.name }}" >> $GITHUB_STEP_SUMMARY
-      #     echo "" >> $GITHUB_STEP_SUMMARY
-      #     cat whatif-output.txt | bicep-whatif-advisor --format markdown >> $GITHUB_STEP_SUMMARY
 
       - name: Run What-If analysis (${{ matrix.environment.name }})
         env:
