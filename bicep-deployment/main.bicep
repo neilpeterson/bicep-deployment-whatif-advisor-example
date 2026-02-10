@@ -42,6 +42,19 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
   properties: {
     securityRules: [
       {
+        name: 'AllowHttpsFromTrustedIP'
+        properties: {
+          priority: 100
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '74.19.4.32'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '443'
+        }
+      }
+      {
         name: 'DenyAllInbound'
         properties: {
           priority: 4096
