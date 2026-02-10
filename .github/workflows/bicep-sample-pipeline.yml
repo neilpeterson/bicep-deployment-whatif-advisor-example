@@ -33,8 +33,10 @@ jobs:
         environment:
           - name: pre-production
             params: ./bicep-deployment/pre-production.bicepparam
+            resource_group_var: AZURE_RESOURCE_GROUP_PRE_PRODUCTION
           - name: production
             params: ./bicep-deployment/production.bicepparam
+            resource_group_var: AZURE_RESOURCE_GROUP_PRODUCTION
 
     steps:
       - name: Checkout code
@@ -63,7 +65,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           az deployment group what-if \
-            --resource-group "${{ vars[format('AZURE_RESOURCE_GROUP_{0}', matrix.environment.name)] }}" \
+            --resource-group "${{ vars[matrix.environment.resource_group_var] }}" \
             --template-file "${{ env.BICEP_TEMPLATE }}" \
             --parameters "${{ matrix.environment.params }}" \
             --exclude-change-types NoChange Ignore \
