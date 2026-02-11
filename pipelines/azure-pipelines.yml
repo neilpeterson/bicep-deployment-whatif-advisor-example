@@ -21,6 +21,7 @@ pr:
 variables:
   BICEP_TEMPLATE: ./bicep-deployment/main.bicep
   PYTHON_VERSION: '3.11'
+  AZURE_SERVICE_CONNECTION: 'nepeters-azure-sub'
 
 stages:
   # PR Review Stage - runs what-if analysis and posts comments to PR
