@@ -73,7 +73,7 @@ jobs:
             --template-file "${{ env.BICEP_TEMPLATE }}" \
             --parameters "${{ matrix.environment.params }}" \
             --exclude-change-types NoChange Ignore \
-            | bicep-whatif-advisor --no-block --comment-title "${{ matrix.environment.name }} What-If Summary" --noise-file bicep-deployment/.whatif-noise --bicep-dir bicep-deployment/
+            | bicep-whatif-advisor --no-block --comment-title "${{ matrix.environment.name }} What-If Summary" --bicep-dir bicep-deployment/
 
   validate:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
