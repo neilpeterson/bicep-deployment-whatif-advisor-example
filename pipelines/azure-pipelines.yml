@@ -32,7 +32,7 @@ stages:
       - job: WhatIfAnalysis
         displayName: 'What-If Analysis'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'self-hosted'
         strategy:
           matrix:
             PreProduction:
@@ -78,7 +78,7 @@ stages:
       - job: WhatIfValidation
         displayName: 'What-If Validation'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'self-hosted'
         strategy:
           matrix:
             PreProduction:
@@ -135,7 +135,7 @@ stages:
       - deployment: DeployPreProd
         displayName: 'Deploy to Pre-Production'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'self-hosted'
         environment: 'pre-production'
         strategy:
           runOnce:
@@ -167,7 +167,7 @@ stages:
       - deployment: DeployProd
         displayName: 'Deploy to Production'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'self-hosted'
         environment: 'production'
         strategy:
           runOnce:
