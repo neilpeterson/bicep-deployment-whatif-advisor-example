@@ -76,7 +76,7 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           direction: 'Inbound'
           access: 'Allow'
           protocol: 'Tcp'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: '74.19.9.32'
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '443'
