@@ -19,9 +19,13 @@ pr:
       - pipelines/azure-pipelines.yml
 
 variables:
-  BICEP_TEMPLATE: ./bicep-deployment/main.bicep
-  PYTHON_VERSION: '3.11'
-  AZURE_SERVICE_CONNECTION: 'nepeters-azure-sub'
+  - group: whatif-tests
+  - name: BICEP_TEMPLATE
+    value: ./bicep-deployment/main.bicep
+  - name: PYTHON_VERSION
+    value: '3.11'
+  - name: AZURE_SERVICE_CONNECTION
+    value: 'nepeters-azure-sub'
 
 stages:
   # PR Review Stage - runs what-if analysis and posts comments to PR
