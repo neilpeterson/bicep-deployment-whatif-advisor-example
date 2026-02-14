@@ -57,6 +57,13 @@ stages:
             displayName: 'Install Azure CLI'
             condition: ne(variables['Agent.OS'], 'Windows_NT')
 
+          - bash: |
+              sudo apt-get update
+              sudo apt-get install -y python3 python3-pip python3-venv
+              sudo ln -sf /usr/bin/python3 /usr/bin/python
+            displayName: 'Install Python'
+            condition: ne(variables['Agent.OS'], 'Windows_NT')
+
           - task: AzureCLI@2
             displayName: 'What-If Analysis with Safety Gate ($(ENVIRONMENT_NAME))'
             inputs:
@@ -105,6 +112,13 @@ stages:
           - bash: |
               curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
             displayName: 'Install Azure CLI'
+            condition: ne(variables['Agent.OS'], 'Windows_NT')
+
+          - bash: |
+              sudo apt-get update
+              sudo apt-get install -y python3 python3-pip python3-venv
+              sudo ln -sf /usr/bin/python3 /usr/bin/python
+            displayName: 'Install Python'
             condition: ne(variables['Agent.OS'], 'Windows_NT')
 
           - task: AzureCLI@2
@@ -163,6 +177,13 @@ stages:
                   displayName: 'Install Azure CLI'
                   condition: ne(variables['Agent.OS'], 'Windows_NT')
 
+                - bash: |
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-pip python3-venv
+                    sudo ln -sf /usr/bin/python3 /usr/bin/python
+                  displayName: 'Install Python'
+                  condition: ne(variables['Agent.OS'], 'Windows_NT')
+
                 - task: AzureCLI@2
                   displayName: 'Deploy Bicep Template'
                   inputs:
@@ -198,6 +219,13 @@ stages:
                 - bash: |
                     curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
                   displayName: 'Install Azure CLI'
+                  condition: ne(variables['Agent.OS'], 'Windows_NT')
+
+                - bash: |
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-pip python3-venv
+                    sudo ln -sf /usr/bin/python3 /usr/bin/python
+                  displayName: 'Install Python'
                   condition: ne(variables['Agent.OS'], 'Windows_NT')
 
                 - task: AzureCLI@2
