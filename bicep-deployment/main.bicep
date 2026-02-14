@@ -1,3 +1,5 @@
+// test
+
 @description('Name of the storage account')
 param storageAccountName string
 
@@ -62,6 +64,19 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
           access: 'Allow'
           protocol: 'Tcp'
           sourceAddressPrefix: '74.19.5.32'
+          sourcePortRange: '*'
+          destinationAddressPrefix: '*'
+          destinationPortRange: '443'
+        }
+      }
+      {
+        name: 'AllowHttpsFromTrustedIPMexico'
+        properties: {
+          priority: 130
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourceAddressPrefix: '74.19.9.32'
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '443'

@@ -19,9 +19,13 @@ pr:
       - pipelines/azure-pipelines.yml
 
 variables:
-  BICEP_TEMPLATE: ./bicep-deployment/main.bicep
-  PYTHON_VERSION: '3.11'
-  AZURE_SERVICE_CONNECTION: 'nepeters-azure-sub'
+  - group: whatif-tests
+  - name: BICEP_TEMPLATE
+    value: ./bicep-deployment/main.bicep
+  - name: PYTHON_VERSION
+    value: '3.11'
+  - name: AZURE_SERVICE_CONNECTION
+    value: 'nepeters-azure-sub'
 
 stages:
   # PR Review Stage - runs what-if analysis and posts comments to PR
@@ -32,7 +36,7 @@ stages:
       - job: WhatIfAnalysis
         displayName: 'What-If Analysis'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'self-hosted'
         strategy:
           matrix:
             PreProduction:
@@ -55,7 +59,9 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Set up Python
+                # Set up Python virtual environment
+                python3 -m venv .venv
+                source .venv/bin/activate
                 python -m pip install --upgrade pip
                 pip install bicep-whatif-advisor[anthropic]
 
@@ -68,7 +74,8 @@ stages:
                   | bicep-whatif-advisor --no-block --comment-title "$(ENVIRONMENT_NAME) What-If Summary" --bicep-dir bicep-deployment/
             env:
               ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
-              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+              GITHUB_TOKEN: $(GITHUB_TOKEN)
+              # SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
   # Validate Stage - runs what-if analysis on push to main
   - stage: Validate
@@ -78,7 +85,7 @@ stages:
       - job: WhatIfValidation
         displayName: 'What-If Validation'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'self-hosted'
         strategy:
           matrix:
             PreProduction:
@@ -100,7 +107,9 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                # Set up Python
+                # Set up Python virtual environment
+                python3 -m venv .venv
+                source .venv/bin/activate
                 python -m pip install --upgrade pip
                 pip install bicep-whatif-advisor[anthropic]
 
@@ -118,6 +127,7 @@ stages:
                 cat $(Agent.TempDirectory)/whatif-output.md
             env:
               ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
+              GITHUB_TOKEN: $(GITHUB_TOKEN)
 
           - task: PublishBuildArtifacts@1
             displayName: 'Publish What-If Results'
@@ -135,7 +145,7 @@ stages:
       - deployment: DeployPreProd
         displayName: 'Deploy to Pre-Production'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'self-hosted'
         environment: 'pre-production'
         strategy:
           runOnce:
@@ -167,7 +177,7 @@ stages:
       - deployment: DeployProd
         displayName: 'Deploy to Production'
         pool:
-          vmImage: 'ubuntu-latest'
+          name: 'self-hosted'
         environment: 'production'
         strategy:
           runOnce:
