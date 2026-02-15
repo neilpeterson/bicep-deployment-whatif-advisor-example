@@ -121,7 +121,7 @@ stages:
                   --template-file "$(BICEP_TEMPLATE)" \
                   --parameters "$(BICEP_PARAMS)" \
                   --exclude-change-types NoChange Ignore \
-                  | bicep-whatif-advisor --format markdown >> $(Agent.TempDirectory)/whatif-output.md
+                  | bicep-whatif-advisor --format markdown --noise-file bicep-deployment/.whatif-noise --bicep-dir bicep-deployment/ >> $(Agent.TempDirectory)/whatif-output.md
 
                 # Display output
                 cat $(Agent.TempDirectory)/whatif-output.md
