@@ -119,3 +119,7 @@ fuzzy: Removing deleteRetentionPolicy properties
 fuzzy: Removes retention policy settings from Key Vault diagnostics
 fuzzy: Removes retention policy and capacity metrics from diagnostics
 
+# Patterns
+retention
+reference
+
