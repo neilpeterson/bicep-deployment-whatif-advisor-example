@@ -109,27 +109,28 @@ fuzzy: System-managed property changing
 # ============================================================================
 # Add your organization-specific noise patterns below
 # Example: Common recurring changes in your environment
-fuzzy: Removing blob delete retention policy configuration
-fuzzy: Swaps two security rules
-fuzzy: Changes subnet reference from hardcoded ID to dynamic reference expression and removes IPv6 flag
-fuzzy: Removing logAnalyticsDestinationType property and retention policy settings from Key Vault diagnostic settings
-fuzzy: Removing retention policy settings and capacity metrics from storage blob diagnostic settings
-fuzzy: Removing retention policy settings and capacity metrics from storage account diagnostic settings
-fuzzy: Removing deleteRetentionPolicy properties
-fuzzy: Removes retention policy settings from Key Vault diagnostics
-fuzzy: Removes retention policy and capacity metrics from diagnostics
-fuzzy: retention policy configuration
-fuzzy: Removing delete retention policy settings
+# fuzzy: Removing blob delete retention policy configuration
+# fuzzy: Swaps two security rules
+# fuzzy: Changes subnet reference from hardcoded ID to dynamic reference expression and removes IPv6 flag
+# fuzzy: Removing logAnalyticsDestinationType property and retention policy settings from Key Vault diagnostic settings
+# fuzzy: Removing retention policy settings and capacity metrics from storage blob diagnostic settings
+# fuzzy: Removing retention policy settings and capacity metrics from storage account diagnostic settings
+# fuzzy: Removing deleteRetentionPolicy properties
+# fuzzy: Removes retention policy settings from Key Vault diagnostics
+# fuzzy: Removes retention policy and capacity metrics from diagnostics
+# fuzzy: retention policy configuration
+# fuzzy: Removing delete retention policy settings
 
 # Patterns
-retention
-reference
-deleteRetentionPolicy
-Modifying diagnostic
-retention policy
-resolutionPolicy
-virtualNetworkLinks
+# retention
+# reference
+# deleteRetentionPolicy
+# Modifying diagnostic
+# retention policy
+# resolutionPolicy
+# virtualNetworkLinks
 
 resource: privateDnsZones/virtualNetworkLinks:Modify
 resource: Microsoft.Insights/diagnosticSettings:Modify
 resource: Microsoft.Storage/storageAccounts/blobServices:Modify
+resource: stgprdparisbranch/blobServices/default:Modify
