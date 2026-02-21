@@ -126,3 +126,4 @@ deleteRetentionPolicy
 Modifying diagnostic
 retention policy
 resolutionPolicy
+virtualNetworkLinks
