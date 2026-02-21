@@ -122,4 +122,6 @@ fuzzy: Removes retention policy and capacity metrics from diagnostics
 # Patterns
 retention
 reference
+deleteRetentionPolicy
+Modifying diagnostic
 
