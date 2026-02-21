@@ -1,15 +1,21 @@
+# ---------------------------------------------------------------------------
+# Bicep deployment pipeline with AI-powered What-If review.
+#
+# PR workflow:    Run What-If per environment and post an AI summary as a PR comment.
+# Push workflow:  Run What-If, write a summary to the job summary, then deploy
+#                 sequentially through pre-production → production.
+# ---------------------------------------------------------------------------
+
 name: Bicep Pipeline - Review & Deploy
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'bicep-deployment/**'
       - '.github/workflows/bicep-sample-pipeline.yml'
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'bicep-deployment/**'
       - '.github/workflows/bicep-sample-pipeline.yml'
@@ -24,11 +30,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+# ---- Shared variables ----
 env:
+  BICEP_DIR: bicep-deployment
   BICEP_TEMPLATE: ./bicep-deployment/main.bicep
+  NOISE_FILE: bicep-deployment/.whatif-noise
+  ADVISOR_PACKAGE: bicep-whatif-advisor[anthropic]
   PYTHON_VERSION: '3.11'
 
 jobs:
+
+  # ---------------------------------------------------
+  # PR Review – What-If + AI comment per environment
+  # ---------------------------------------------------
   pr-review:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -61,7 +75,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install bicep-whatif-advisor
-        run: pip install bicep-whatif-advisor[anthropic]
+        run: pip install "${{ env.ADVISOR_PACKAGE }}"
 
       - name: Run What-If analysis with safety gate (${{ matrix.environment.name }})
         env:
@@ -73,8 +87,15 @@ jobs:
             --template-file "${{ env.BICEP_TEMPLATE }}" \
             --parameters "${{ matrix.environment.params }}" \
             --exclude-change-types NoChange Ignore \
-            | bicep-whatif-advisor --no-block --comment-title "${{ matrix.environment.name }} What-If Summary" --bicep-dir bicep-deployment/
+          | bicep-whatif-advisor \
+            --no-block \
+            --comment-title "${{ matrix.environment.name }} What-If Summary" \
+            --bicep-dir "${{ env.BICEP_DIR }}" \
+            --noise-file "${{ env.NOISE_FILE }}"
 
+  # ---------------------------------------------------
+  # Validate – What-If + summary on push / dispatch
+  # ---------------------------------------------------
   validate:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -105,7 +126,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install bicep-whatif-advisor
-        run: pip install bicep-whatif-advisor[anthropic]
+        run: pip install "${{ env.ADVISOR_PACKAGE }}"
 
       - name: Run What-If analysis (${{ matrix.environment.name }})
         env:
@@ -116,8 +137,16 @@ jobs:
             --resource-group "${{ vars[matrix.environment.resource_group_var] }}" \
             --template-file "${{ env.BICEP_TEMPLATE }}" \
             --parameters "${{ matrix.environment.params }}" \
-            --exclude-change-types NoChange Ignore | bicep-whatif-advisor --format markdown >> $GITHUB_STEP_SUMMARY
+            --exclude-change-types NoChange Ignore \
+          | bicep-whatif-advisor \
+            --format markdown \
+            --bicep-dir "${{ env.BICEP_DIR }}" \
+            --noise-file "${{ env.NOISE_FILE }}" \
+            >> "$GITHUB_STEP_SUMMARY"
 
+  # ---------------------------------------------------
+  # Deploy – sequential rollout: pre-production → production
+  # ---------------------------------------------------
   deploy-pre-production:
     needs: validate
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -141,9 +170,9 @@ jobs:
             --name "bicep-deploy-pre-production-${{ github.run_number }}" \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP_PRE_PRODUCTION }}" \
             --template-file "${{ env.BICEP_TEMPLATE }}" \
-            --parameters ./bicep-deployment/pre-production.bicepparam \
+            --parameters "${{ env.BICEP_DIR }}/pre-production.bicepparam" \
             --verbose
-            
+
   deploy-production:
     needs: deploy-pre-production
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -167,5 +196,5 @@ jobs:
             --name "bicep-deploy-production-${{ github.run_number }}" \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP_PRODUCTION }}" \
             --template-file "${{ env.BICEP_TEMPLATE }}" \
-            --parameters ./bicep-deployment/production.bicepparam \
+            --parameters "${{ env.BICEP_DIR }}/production.bicepparam" \
             --verbose
