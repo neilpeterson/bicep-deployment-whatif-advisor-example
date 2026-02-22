@@ -16,7 +16,7 @@ param branches = [
     storageAccountName: 'stgberlinbranch'
     keyVaultName: 'akv-berlin-branch'
     nsgRulePriority: 206
-    ipAddress: '*'
+    ipAddress: '71.197.101.86'
   }
 ]
 
