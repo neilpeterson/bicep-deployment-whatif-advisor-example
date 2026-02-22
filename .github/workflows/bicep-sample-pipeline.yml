@@ -92,7 +92,7 @@ jobs:
             --comment-title "${{ matrix.environment.name }} What-If Summary" \
             --bicep-dir "${{ env.BICEP_DIR }}" \
             --noise-file "${{ env.NOISE_FILE }}" \
-            --include-whatif
+            --include-whatif --skip-operations
 
   # ---------------------------------------------------
   # Validate – What-If + summary on push / dispatch
@@ -142,7 +142,7 @@ jobs:
           | bicep-whatif-advisor \
             --format markdown \
             --bicep-dir "${{ env.BICEP_DIR }}" \
-            --noise-file "${{ env.NOISE_FILE }}" \
+            --noise-file "${{ env.NOISE_FILE }}" --skip-operations \
             >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------
@@ -197,5 +197,5 @@ jobs:
             --name "bicep-deploy-production-${{ github.run_number }}" \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP_PRODUCTION }}" \
             --template-file "${{ env.BICEP_TEMPLATE }}" \
-            --parameters "${{ env.BICEP_DIR }}/production.bicepparam" \
+            --parameters "${{ env.BICEP_DIR }}/production.bicepparam" --skip-operations \
             --verbose
