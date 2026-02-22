@@ -130,9 +130,8 @@ fuzzy: System-managed property changing
 # resolutionPolicy
 # virtualNetworkLinks
 
-# resource: privateDnsZones/virtualNetworkLinks:Modify
-# resource: Microsoft.Insights/diagnosticSettings:Modify
-# resource: Microsoft.Storage/storageAccounts/blobServices:Modify
-# resource: stgprdparisbranch/blobServices/default:Modify
-
+resource: privateDnsZones/virtualNetworkLinks:Modify
+resource: Microsoft.Insights/diagnosticSettings:Modify
+resource: Microsoft.Storage/storageAccounts/blobServices:Modify
+resource: stgprdparisbranch/blobServices/default:Modify
 resource: Microsoft.Network/privateEndpoints:Modify
