@@ -4,6 +4,12 @@ param branchOfficeName string
 @description('Name of the storage account for this branch office')
 param storageAccountName string
 
+@description('Name of the App Service Plan for this branch office')
+param appServicePlanName string
+
+@description('Name of the Web App for this branch office')
+param webAppName string
+
 @description('Name of the Key Vault for this branch office')
 param keyVaultName string
 
@@ -34,6 +40,9 @@ param nsgRulePriority int
   'Deny'
 ])
 param networkAclsDefaultAction string = 'Deny'
+
+@description('When true, weakens storage account security for SFI compliance testing')
+param breakSFI bool = false
 
 resource nsg 'Microsoft.Network/networkSecurityGroups@2024-01-01' existing = {
   name: nsgName
@@ -69,13 +78,49 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
   properties: {
     minimumTlsVersion: 'TLS1_2'
-    allowBlobPublicAccess: false
+    allowBlobPublicAccess: breakSFI ? true : false
     accessTier: 'Hot'
-    publicNetworkAccess: 'Disabled'
+    publicNetworkAccess: breakSFI ? 'Enabled' : 'Disabled'
     allowSharedKeyAccess: false
     networkAcls: {
       defaultAction: networkAclsDefaultAction
       bypass: 'AzureServices'
+    }
+  }
+}
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
+  name: appServicePlanName
+  location: resourceGroup().location
+  sku: {
+    name: 'F1'
+    tier: 'Free'
+  }
+  kind: 'app'
+  tags: {
+    Environment: 'Production'
+    ManagedBy: 'Bicep'
+    CostCenter: 'Engineering'
+    BranchOffice: branchOfficeName
+  }
+}
+
+resource webApp 'Microsoft.Web/sites@2023-12-01' = {
+  name: webAppName
+  location: resourceGroup().location
+  kind: 'app'
+  tags: {
+    Environment: 'Production'
+    ManagedBy: 'Bicep'
+    CostCenter: 'Engineering'
+    BranchOffice: branchOfficeName
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    httpsOnly: true
+    siteConfig: {
+      minTlsVersion: '1.2'
+      ftpsState: 'Disabled'
     }
   }
 }

@@ -123,6 +123,9 @@ module branchDeployment 'branch-office.bicep' = [for branch in branches: {
     ipAddress: branch.ipAddress
     keyVaultName: branch.keyVaultName
     storageAccountName: branch.storageAccountName
+    appServicePlanName: branch.appServicePlanName
+    webAppName: branch.webAppName
+    breakSFI: branch.breakSFI
     nsgRulePriority: branch.nsgRulePriority
     logAnalyticsWorkspaceId: logAnalytics.id
     nsgName: nsg.name
